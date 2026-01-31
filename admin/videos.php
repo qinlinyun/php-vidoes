@@ -113,7 +113,7 @@ $videos = $stmt->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>视频管理 - 影视系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://css.qinlinyun.cn/uploads/css/68cd3c66163ff-20260129212429-5fce6eb9.css?v=20260129212429"></script>
 </head>
 <body class="bg-gray-100 text-gray-900">
     <nav class="bg-white shadow-sm">
@@ -124,6 +124,8 @@ $videos = $stmt->fetchAll();
                 <a class="rounded-full px-3 py-1 hover:bg-gray-100" href="groups.php">分组管理</a>
                 <a class="rounded-full px-3 py-1 hover:bg-gray-100" href="domains.php">域名管理</a>
                 <a class="rounded-full bg-gray-100 px-3 py-1" href="videos.php">视频管理</a>
+                <a class="rounded-full px-3 py-1 hover:bg-gray-100" href="notifications.php">站内通知</a>
+                <a class="rounded-full px-3 py-1 hover:bg-gray-100" href="feedback.php">意见反馈</a>
                 <a class="rounded-full px-3 py-1 hover:bg-gray-100" href="../logout.php">退出</a>
             </div>
         </div>

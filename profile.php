@@ -10,8 +10,8 @@ $user = getCurrentUser();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人中心 - 影视系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>个人中心 - 竹叶云控平台</title>
+    <script src="https://css.qinlinyun.cn/cj/68cd3c66163ff.css"></script>
 </head>
 <body class="bg-gray-100 text-gray-900">
     <nav class="bg-white shadow-sm">

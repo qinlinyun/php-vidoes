@@ -54,6 +54,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建邮箱验证码表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `email_verifications` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `email` varchar(100) NOT NULL,
+            `code` varchar(6) NOT NULL,
+            `expires_at` datetime NOT NULL,
+            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_email` (`email`),
+            KEY `idx_expires` (`expires_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         
         // 创建用户组域名关联表
         $pdo->exec("CREATE TABLE IF NOT EXISTS `group_domains` (
@@ -71,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             `id` int(11) NOT NULL AUTO_INCREMENT,
             `title` varchar(255) NOT NULL,
             `description` text,
-            `cover` varchar(255),
+            `cover` varchar(255) DEFAULT NULL,
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
@@ -86,6 +98,125 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
             KEY `video_id` (`video_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建旧版进度表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `video_progress` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `user_id` int(11) NOT NULL,
+            `video_id` int(11) NOT NULL,
+            `episode_id` int(11) NOT NULL,
+            `progress_seconds` int(11) NOT NULL DEFAULT 0,
+            `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_user_video_episode` (`user_id`,`video_id`,`episode_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建新版进度表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `video_watch_progress` (
+            `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+            `user_id` int(11) NOT NULL,
+            `video_id` int(11) NOT NULL,
+            `episode_id` int(11) NOT NULL,
+            `progress_seconds` int unsigned NOT NULL DEFAULT 0,
+            `duration_seconds` int unsigned NOT NULL DEFAULT 0,
+            `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_user_video_ep` (`user_id`,`video_id`,`episode_id`),
+            KEY `idx_video_ep` (`video_id`,`episode_id`),
+            KEY `idx_user` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建进度事件表（用于SSE推送和审计）
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `watch_progress_events` (
+            `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+            `actor_user_id` int(11) DEFAULT NULL,
+            `target_user_id` int(11) DEFAULT NULL,
+            `action` varchar(50) NOT NULL,
+            `video_id` int(11) DEFAULT NULL,
+            `episode_id` int(11) DEFAULT NULL,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_target_user` (`target_user_id`),
+            KEY `idx_created` (`created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建站内通知表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `notifications` (
+            `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+            `title` varchar(200) NOT NULL,
+            `content` text NOT NULL,
+            `target_type` enum('all','user') NOT NULL DEFAULT 'all',
+            `target_user_id` int(11) DEFAULT NULL,
+            `created_by` int(11) NOT NULL,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_target_user` (`target_user_id`),
+            KEY `idx_created_at` (`created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建通知已读表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `notification_reads` (
+            `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+            `notification_id` bigint unsigned NOT NULL,
+            `user_id` int(11) NOT NULL,
+            `read_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_read` (`notification_id`,`user_id`),
+            KEY `idx_user` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建通知已读表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `notification_reads` (
+            `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+            `user_id` int(11) NOT NULL,
+            `notification_id` bigint unsigned NOT NULL,
+            `read_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_user_notice` (`user_id`,`notification_id`),
+            KEY `idx_user` (`user_id`),
+            KEY `idx_notice` (`notification_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建意见反馈表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `feedbacks` (
+            `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+            `user_id` int(11) NOT NULL,
+            `title` varchar(200) DEFAULT NULL,
+            `content` text NOT NULL,
+            `image_path` varchar(255) DEFAULT NULL,
+            `status` enum('open','replied','closed') NOT NULL DEFAULT 'open',
+            `user_last_read_at` datetime DEFAULT NULL,
+            `admin_last_read_at` datetime DEFAULT NULL,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_user` (`user_id`),
+            KEY `idx_created_at` (`created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建意见回复表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `feedback_replies` (
+            `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+            `feedback_id` bigint unsigned NOT NULL,
+            `user_id` int(11) NOT NULL,
+            `role` enum('user','admin') NOT NULL,
+            `content` text NOT NULL,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_feedback` (`feedback_id`),
+            KEY `idx_created_at` (`created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // 创建反馈回复已读表
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `feedback_reply_reads` (
+            `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+            `reply_id` bigint unsigned NOT NULL,
+            `user_id` int(11) NOT NULL,
+            `read_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_reply_user` (`reply_id`,`user_id`),
+            KEY `idx_user` (`user_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         
         // 插入默认用户组
